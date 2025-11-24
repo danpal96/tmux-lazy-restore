@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # Function: save_sessions
 # Description: Saves all of the current tmux sessions, windows, and panes to a file to be later restored
@@ -218,7 +219,7 @@ restore_sessions() {
 
         # Restore the original process in its pane
         if [ -n "$pane_command" ]; then
-          tmux send-keys -t="$session_name:$window_index.$pane_index" "$pane_command" C-m
+          tmux send-keys -t="$session_name:$window_index.$pane_index" "cd \"$pane_path\"" C-m "$pane_command" C-m
         elif [ -n "$pane_path" ]; then
           # If there was no process, at least set the path
           tmux send-keys -t="$session_name:$window_index.$pane_index" "cd \"$pane_path\"" C-m "clear" C-m
@@ -301,7 +302,7 @@ choose_session() {
     tmux set-option -gu @lazy_restore_chosen_session
 
     # Display choice of session to user and then store that choice in a tmux option
-    tmux display-popup -E "echo \"${chooser_sessions}\" | fzf --ansi --header="[*]\\\ =\\\ not\\\ in\\\ session\\\ file,\\\ [~]\\\ =\\\ already\\\ loaded\\\ from\\\ session\\\ file" --header-first | tr -d '\n' | xargs -0 -I {} tmux set-option -g @lazy_restore_chosen_session {}"
+    tmux display-popup -E "echo \"${chooser_sessions}\" | fzf --ansi --header=\"[*] = not in session file, [~] = already loaded from session file\" --header-first | tr -d '\n' | xargs -0 -I {} tmux set-option -g @lazy_restore_chosen_session {}"
 
     # Convert the tmux option to a shell variable
     lazy_restore_chosen_session=$(tmux show-options -gv @lazy_restore_chosen_session | sed 's/ \[\*]\| \[~]$//')
@@ -487,7 +488,7 @@ case "$1" in
         restore_sessions
         ;;
     *)
-        echo "Usage: $0 {choose|update|restore_all|save_all}"
+        echo "Usage: $0 {choose|update|revert|delete|save_all|restore_all}"
         exit 1
         ;;
 esac
